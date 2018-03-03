@@ -3,7 +3,11 @@
 const path = require('path')
 const process = require('process')
 const yargs = require('yargs')
-const doOperation = require('./src')
+
+// If this is being run as a child process of the node test runner,
+// we're only testing this module. So subsitute a null op for doIt().
+// Noted in test/cli.test.js as well.
+const doIt = process.env['NODE_ENV'] !== 'test' ? require('./lib') : () => {}
 
 const handler = argv => {
   const command = argv._[0]
@@ -11,6 +15,8 @@ const handler = argv => {
   const opts = {
     output: argv.output,
     subject: argv.subject,
+    stdin: process.stdin,
+    stdout: process.stdout,
     warn: argv.quiet ? () => {} : console.warn
   }
 
@@ -33,7 +39,7 @@ const handler = argv => {
   }
 
   try {
-    doOperation(command, positionals, opts)
+    doIt(command, positionals, opts)
   } catch (err) {
     // if we're in a development scenario (aka this file was directly executed)
     // throw an eror that will include a stacktrace.  else, display a cleaner error.

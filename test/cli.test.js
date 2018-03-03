@@ -1,6 +1,11 @@
 /* eslint-env jest */
 
 const { spawn } = require('child-process-promise')
+const cliPath = './src/cli.js'
+
+// Note that the doIt() from ../src/lib.js is replaced with a null
+// op when ./src/cli.js is ran in a child process of the node test runner
+// Noted in ./src/cli.js as well.
 
 describe('cli', () => {
   // to the child process, it'll look like the process was run
@@ -18,7 +23,7 @@ describe('cli', () => {
 
   test('help shown with no command', () => {
     expect.assertions(2)
-    return spawn('./cli.js', [], optsWithoutStdin).catch(err => {
+    return spawn(cliPath, [], optsWithoutStdin).catch(err => {
       expect(err.stderr.includes('cli.js <command>')).toBeTruthy()
       expect(err.stderr.includes('Please specify a command')).toBeTruthy()
     })
@@ -26,7 +31,7 @@ describe('cli', () => {
 
   test('help shown with unrecognized command', () => {
     expect.assertions(2)
-    return spawn('./cli.js', ['nope'], optsWithoutStdin).catch(err => {
+    return spawn(cliPath, ['nope'], optsWithoutStdin).catch(err => {
       expect(err.stderr.includes('cli.js union')).toBeTruthy()
       expect(err.stderr.includes('Unknown argument')).toBeTruthy()
     })
@@ -34,7 +39,7 @@ describe('cli', () => {
 
   test('help shown with no positional nor stdin', () => {
     expect.assertions(2)
-    return spawn('./cli.js', ['union'], optsWithoutStdin).catch(err => {
+    return spawn(cliPath, ['union'], optsWithoutStdin).catch(err => {
       expect(err.stderr.includes('cli.js union')).toBeTruthy()
       expect(err.stderr.includes('Please provide some GeoJSON')).toBeTruthy()
     })
@@ -42,18 +47,14 @@ describe('cli', () => {
 
   test('OK with some stdin', () => {
     expect.assertions(1)
-    return spawn('./cli.js', ['union'], optsWithStdin).then(result => {
+    return spawn(cliPath, ['union'], optsWithStdin).then(result => {
       expect(result.stderr).toEqual('')
     })
   })
 
   test('OK with a positional', () => {
     expect.assertions(1)
-    return spawn(
-      './cli.js',
-      ['union', 'file'],
-      optsWithoutStdin
-    ).then(result => {
+    return spawn(cliPath, ['union', 'file'], optsWithoutStdin).then(result => {
       expect(result.stderr).toEqual('')
     })
   })
@@ -61,7 +62,7 @@ describe('cli', () => {
   test('OK with multiple positionals', () => {
     expect.assertions(1)
     return spawn(
-      './cli.js',
+      cliPath,
       ['union', 'file1', 'file2'],
       optsWithoutStdin
     ).then(result => {
@@ -71,14 +72,14 @@ describe('cli', () => {
 
   test('OK for intersection', () => {
     expect.assertions(1)
-    return spawn('./cli.js', ['intersection'], optsWithStdin).then(result => {
+    return spawn(cliPath, ['intersection'], optsWithStdin).then(result => {
       expect(result.stderr).toEqual('')
     })
   })
 
   test('OK for xor', () => {
     expect.assertions(1)
-    return spawn('./cli.js', ['xor'], optsWithStdin).then(result => {
+    return spawn(cliPath, ['xor'], optsWithStdin).then(result => {
       expect(result.stderr).toEqual('')
     })
   })
@@ -86,7 +87,7 @@ describe('cli', () => {
   test('OK with -o option', () => {
     expect.assertions(1)
     return spawn(
-      './cli.js',
+      cliPath,
       ['union', '-o', 'file'],
       optsWithStdin
     ).then(result => {
@@ -97,7 +98,7 @@ describe('cli', () => {
   test('help shown if difference() does not receive -s or input on stdin', () => {
     expect.assertions(2)
     return spawn(
-      './cli.js',
+      cliPath,
       ['difference', 'file'],
       optsWithoutStdin
     ).catch(err => {
@@ -108,7 +109,7 @@ describe('cli', () => {
 
   test('OK for difference with input on stdin', () => {
     expect.assertions(1)
-    return spawn('./cli.js', ['difference'], optsWithStdin).then(result => {
+    return spawn(cliPath, ['difference'], optsWithStdin).then(result => {
       expect(result.stderr).toEqual('')
     })
   })
@@ -116,7 +117,7 @@ describe('cli', () => {
   test('OK for difference with input via -s ', () => {
     expect.assertions(1)
     return spawn(
-      './cli.js',
+      cliPath,
       ['difference', 'file1', '-s', 'file2'],
       optsWithoutStdin
     ).then(result => {

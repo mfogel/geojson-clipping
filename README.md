@@ -34,8 +34,9 @@ Input/output streams:
 
 Input GeoJSON objects may be provided via:
 
- * the positional `<path>` arguments, each of which may point to either:
+ * the positional `<path>` arguments, each of which may point to any of:
    * a GeoJSON file
+   * a file with multiple GeoJSON objects in it, whitespace separated (ex: [ndjson](http://ndjson.org/))
    * a directory, in which case any files with a `.geojson` extension found immediately within it will be used as input
  * `stdin` (objects may optionally be separated by whitespace)
  * the `-s / --subject <path>` option, for the `difference()` operation only
