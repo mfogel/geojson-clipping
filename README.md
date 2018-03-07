@@ -1,5 +1,3 @@
-## NOTE: this project is in active development and has not yet been released. Features described below may not exist yet.
-
 # geojson-clipping
 
 Apply boolean polygon clipping operations (`union`, `intersection`, `difference`, `xor`) to Polygons & MultiPolygons in your GeoJSON files.
