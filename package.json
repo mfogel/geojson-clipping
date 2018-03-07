@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "child-process-promise": "^2.2.1",
+    "coveralls": "^3.0.0",
     "jest": "^22.4.2"
   }
 }
