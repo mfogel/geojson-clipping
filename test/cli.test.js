@@ -3,21 +3,23 @@
 const { spawn } = require('child-process-promise')
 const cliPath = './src/cli.js'
 
-// Note that the doIt() from ../src/lib.js is replaced with a null
-// op when ./src/cli.js is ran in a child process of the node test runner
-// Noted in ./src/cli.js as well.
+// Tell the child subprocess to mock out the implementation of lib.doIt.
+// Note that normal mocking doesn't work as this is run as a separate process.
+const childEnv = Object.assign({}, process.env, { NODE_MOCKS: 'doIt' })
 
 describe('cli', () => {
   // to the child process, it'll look like the process was run
   // from the terminal *with* something piped to it on stdin
   const optsWithStdin = {
-    capture: ['stdout', 'stderr']
+    capture: ['stdout', 'stderr'],
+    env: childEnv
   }
 
   // to the child process, it'll look like the process was run
   // from the terminal *without* anything piped to it on stdin
   const optsWithoutStdin = {
     capture: ['stdout', 'stderr'],
+    env: childEnv,
     stdio: ['inherit', 'pipe', 'pipe']
   }
 

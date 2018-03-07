@@ -3,11 +3,14 @@
 const path = require('path')
 const process = require('process')
 const yargs = require('yargs')
+const lib = require('./lib')
 
-// If this is being run as a child process of the node test runner,
-// we're only testing this module. So subsitute a null op for doIt().
-// Noted in test/cli.test.js as well.
-const doIt = process.env['NODE_ENV'] !== 'test' ? require('./lib') : () => {}
+// Allow the test runner to request, via env vars, to mock out lib.doIt
+// Note that normal mocking doesn't work as this is run as a separate process.
+const shouldMockDoIt = () =>
+  process.env['NODE_ENV'] === 'test' &&
+  process.env['NODE_MOCKS'].split(' ').includes('doIt')
+if (shouldMockDoIt) lib.doIt = () => {}
 
 const handler = argv => {
   const command = argv._[0]
@@ -39,10 +42,10 @@ const handler = argv => {
   }
 
   try {
-    doIt(command, positionals, opts)
+    lib.doIt(command, positionals, opts)
   } catch (err) {
-    // if we're in a development scenario (aka this file was directly executed)
-    // throw an eror that will include a stacktrace.  else, display a cleaner error.
+    // If we're in a development scenario (aka this file was directly executed)
+    // throw an eror that will include a stacktrace. Else, display a cleaner error.
     if (argv['$0'] === path.basename(__filename)) throw err
     console.error(`Error: ${err.message}`)
     process.exit(1)
