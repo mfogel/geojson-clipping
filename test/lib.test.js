@@ -27,6 +27,15 @@ const tryDirRmf = dir => {
   } catch (err) {}
 }
 
+const createFeatureMultiPoly = coords => ({
+  type: 'Feature',
+  properties: null,
+  geometry: {
+    type: 'MultiPolygon',
+    coordinates: coords
+  }
+})
+
 describe('lib.getOutputStream', () => {
   const tmpOutput = 'test/tmp-out.geojson'
   afterAll(() => tryFileRm(tmpOutput))
@@ -161,10 +170,7 @@ describe('lib.writeMultiPolyToStream', () => {
 
   test('empty multipoly', () => {
     const multipoly = []
-    const expected = {
-      type: 'MultiPolygon',
-      coordinates: multipoly
-    }
+    const expected = createFeatureMultiPoly(multipoly)
     let outString = ''
     const outStream = new stream.Writable({
       write: (chunk, encoding, callback) => {
@@ -182,10 +188,7 @@ describe('lib.writeMultiPolyToStream', () => {
 
   test('basic one-poly multiploy', () => {
     const multipoly = [[[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]]]
-    const expected = {
-      type: 'MultiPolygon',
-      coordinates: multipoly
-    }
+    const expected = createFeatureMultiPoly(multipoly)
     const outStream = fs.createWriteStream(tmpOutput)
 
     expect.assertions(1)
@@ -421,6 +424,7 @@ describe('lib.doIt', () => {
     polygonClipping.union.mockImplementation(() => [])
     const operation = 'union'
     const positionals = []
+    const expected = createFeatureMultiPoly([])
     let outString = ''
     const opts = {
       stdin: new stream.Readable(),
@@ -437,16 +441,14 @@ describe('lib.doIt', () => {
     return lib.doIt(operation, positionals, opts).then(result => {
       expect(polygonClipping.union).toHaveBeenCalledTimes(1)
       expect(polygonClipping.union).toHaveBeenCalledWith()
-      expect(outString).toEqual('{"type":"MultiPolygon","coordinates":[]}')
+      expect(outString).toEqual(JSON.stringify(expected))
     })
   })
 
   test('polygon clipping output written out to output', () => {
-    const expected = {
-      type: 'MultiPolygon',
-      coordinates: [[[0, 0], [1, 0], [0, 1], [0, 0]]]
-    }
-    polygonClipping.union.mockImplementation(() => expected.coordinates)
+    const coords = [[[[0, 0], [1, 0], [0, 1], [0, 0]]]]
+    const expected = createFeatureMultiPoly(coords)
+    polygonClipping.union.mockImplementation(() => coords)
     const operation = 'union'
     const positionals = []
     const opts = {

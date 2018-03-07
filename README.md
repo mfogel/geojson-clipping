@@ -54,8 +54,9 @@ If a geojson object with a different type is encountered (ex: Point) the offendi
 
 The computed GeoJSON is by default written to `stdout`, but may be redirected using the `-o / --output <path>` option. The output GeoJSON will have the following properties:
 
- * it will be a single GeoJSON object of type MultiPolygon.
- * if it is the empty set (ex: intersection of non-overlapping polygons) the coordinates will be `[]`.
+ * it will be a single GeoJSON Feature object with a geometry of type MultiPolygon.
+ * the Feature's properties attribute will be set to `null`.
+ * if the geometry of resulting from the operation is the empty set (ex: intersection of non-overlapping polygons) then the coordinates of the MultiPolygon will be `[]`.
  * it will have the [qualities guaranteed by polygon-clipping](https://github.com/mfogel/polygon-clipping#output).
 
 ## Options

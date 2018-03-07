@@ -65,8 +65,12 @@ const getMultiPolysFromStream = async (readStream, warn) =>
 const writeMultiPolyToStream = async (stream, multiPoly) =>
   new Promise((resolve, reject) => {
     const geojson = {
-      type: 'MultiPolygon',
-      coordinates: multiPoly
+      type: 'Feature',
+      properties: null,
+      geometry: {
+        type: 'MultiPolygon',
+        coordinates: multiPoly
+      }
     }
     stream.write(JSON.stringify(geojson), 'utf-8', resolve)
   })
