@@ -7,7 +7,7 @@ const lib = require('./lib')
 
 // Allow the test runner to request, via env vars, to mock out lib.doIt
 // Note that normal mocking doesn't work as this is run as a separate process.
-const shouldMockDoIt = () =>
+const shouldMockDoIt =
   process.env['NODE_ENV'] === 'test' &&
   process.env['NODE_MOCKS'].split(' ').includes('doIt')
 if (shouldMockDoIt) lib.doIt = () => {}
@@ -27,7 +27,7 @@ const handler = argv => {
   // nor any GeoJSON specified as positionals... show the help
   if (process.stdin.isTTY && positionals.length === 0) {
     yargs.showHelp()
-    console.error('Please provide some GeoJSON')
+    console.error('Please provide some GeoJSON via stdin or positionals')
     process.exit(1)
   }
 
