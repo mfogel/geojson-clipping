@@ -71,12 +71,12 @@ If this option is not supplied, the `subject` will by default be the first GeoJS
 
 Valid *only* for `difference()` operation. Invalid for other operations.
 
-Scan input GeoJSON for pre-computed [bounding boxes](https://tools.ietf.org/html/rfc7946#section-5). Bounding boxes may be supplied via the GeoJSON `bbox` property, or may be present in the filename as stringified geojson. Examples of such filenames:
+Scan input GeoJSON filenames for pre-computed stringified [bounding boxes](https://tools.ietf.org/html/rfc7946#section-5). If no bounding box is found in the filename, then compute a bounding box from the GeoJSON coordinates. Examples of filenames containing bounding boxes:
 
 * `[-10,-10,10,10].json`
 * `424242.[-58.5314588,-34.705637,-58.3351249,-34.5265535].geojson`
 
-When a bounding box is found, it is compared with the bounding box of the `subject` to determine if the bounding boxes overlap. In the case of no overlap, the calculation will be short-curcuited for a performance boost.
+If a the bounding box of a given GeoJSON object does not overlap the bounding box of the `subject`, that GeoJSON object is droped from the calculation as it cannot contribute to the end result, resulting in a performance boost. In the case that the bounding box was extracted from the filename, the non-contributing GeoJSON object is dropped *without* reading the file in from disk.
 
 ### `-o / --output <path>`
 
