@@ -5,7 +5,7 @@ const cliPath = './src/cli.js'
 
 // Tell the child subprocess to mock out the implementation of lib.doIt.
 // Note that normal mocking doesn't work as this is run as a separate process.
-const childEnv = Object.assign({}, process.env, { NODE_MOCKS: 'doIt' })
+const childEnv = Object.assign({}, process.env, { NODE_MOCK_DOIT: true })
 
 describe('cli', () => {
   // to the child process, it'll look like the process was run
@@ -48,53 +48,59 @@ describe('cli', () => {
   })
 
   test('OK with some stdin', () => {
-    expect.assertions(1)
+    expect.assertions(2)
     return spawn(cliPath, ['union'], optsWithStdin).then(result => {
       expect(result.stderr).toEqual('')
+      expect(JSON.parse(result.stdout).opts.stdout).toEqual('piped')
     })
   })
 
   test('OK with a positional', () => {
-    expect.assertions(1)
+    expect.assertions(2)
     return spawn(cliPath, ['union', 'file'], optsWithoutStdin).then(result => {
       expect(result.stderr).toEqual('')
+      expect(JSON.parse(result.stdout).positionals).toEqual(['file'])
     })
   })
 
-  test('OK with multiple positionals', () => {
-    expect.assertions(1)
-    return spawn(
+  test('OK with multiple positionals', async () => {
+    const result = await spawn(
       cliPath,
       ['union', 'file1', 'file2'],
       optsWithoutStdin
-    ).then(result => {
-      expect(result.stderr).toEqual('')
-    })
+    )
+    expect(result.stderr).toEqual('')
+    expect(JSON.parse(result.stdout).positionals).toEqual(['file1', 'file2'])
   })
 
-  test('OK for intersection', () => {
-    expect.assertions(1)
-    return spawn(cliPath, ['intersection'], optsWithStdin).then(result => {
-      expect(result.stderr).toEqual('')
-    })
+  test('OK for union', async () => {
+    const result = await spawn(cliPath, ['union'], optsWithStdin)
+    expect(result.stderr).toEqual('')
+    expect(JSON.parse(result.stdout).operation).toEqual('union')
   })
 
-  test('OK for xor', () => {
-    expect.assertions(1)
-    return spawn(cliPath, ['xor'], optsWithStdin).then(result => {
-      expect(result.stderr).toEqual('')
-    })
+  test('OK for intersection', async () => {
+    const result = await spawn(cliPath, ['intersection'], optsWithStdin)
+    expect(result.stderr).toEqual('')
+    expect(JSON.parse(result.stdout).operation).toEqual('intersection')
   })
 
-  test('OK with -o option', () => {
-    expect.assertions(1)
-    return spawn(
-      cliPath,
-      ['union', '-o', 'file'],
-      optsWithStdin
-    ).then(result => {
-      expect(result.stderr).toEqual('')
-    })
+  test('OK for xor', async () => {
+    const result = await spawn(cliPath, ['xor'], optsWithStdin)
+    expect(result.stderr).toEqual('')
+    expect(JSON.parse(result.stdout).operation).toEqual('xor')
+  })
+
+  test('OK with -q option', async () => {
+    const result = await spawn(cliPath, ['union', '-q'], optsWithStdin)
+    expect(result.stderr).toEqual('')
+    expect(JSON.parse(result.stdout).opts.warn).toEqual('none')
+  })
+
+  test('OK with -o option', async () => {
+    const result = await spawn(cliPath, ['union', '-o', 'file'], optsWithStdin)
+    expect(result.stderr).toEqual('')
+    expect(JSON.parse(result.stdout).opts.output).toEqual('file')
   })
 
   test('help shown if difference() does not receive -s or input on stdin', () => {
@@ -109,21 +115,25 @@ describe('cli', () => {
     })
   })
 
-  test('OK for difference with input on stdin', () => {
-    expect.assertions(1)
-    return spawn(cliPath, ['difference'], optsWithStdin).then(result => {
-      expect(result.stderr).toEqual('')
-    })
+  test('OK for difference with input on stdin', async () => {
+    const result = await spawn(cliPath, ['difference'], optsWithStdin)
+    expect(result.stderr).toEqual('')
+    expect(JSON.parse(result.stdout).operation).toEqual('difference')
   })
 
-  test('OK for difference with input via -s ', () => {
-    expect.assertions(1)
-    return spawn(
+  test('OK for difference with input via -s ', async () => {
+    const result = await spawn(
       cliPath,
       ['difference', 'file1', '-s', 'file2'],
       optsWithoutStdin
-    ).then(result => {
-      expect(result.stderr).toEqual('')
-    })
+    )
+    expect(result.stderr).toEqual('')
+    expect(JSON.parse(result.stdout).opts.subject).toEqual('file2')
+  })
+
+  test('OK for difference with -b ', async () => {
+    const result = await spawn(cliPath, ['difference', '-b'], optsWithStdin)
+    expect(result.stderr).toEqual('')
+    expect(JSON.parse(result.stdout).opts.bboxes).toEqual(true)
   })
 })

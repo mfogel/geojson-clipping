@@ -1,35 +1,56 @@
-const fs = require('fs')
 const path = require('path')
 const polygonClipping = require('polygon-clipping')
 const split = require('split')
+const bbox = require('./bbox')
 const parse = require('./parse')
 
-/* Get the output write stream */
-const getOutputStream = opts =>
-  opts.output ? fs.createWriteStream(opts.output, { mode: 0o644 }) : opts.stdout
+const Promise = require('bluebird')
+const fs = Promise.promisifyAll(require('fs'))
 
-/* Scan a directory for .geojson files and create & return an array
- * of readStreams, one for each found */
-const getReadStreamsFromDir = dir =>
-  fs
-    .readdirSync(dir)
-    .filter(fn => path.extname(fn) === '.geojson')
-    .map(fn => fs.createReadStream(path.join(dir, fn)))
-
-/* Get an array of the input streams, with the subject input stream
- * at the front. */
-const getInputStreams = (positionals, opts) => {
+/* Get an array of the subject and stdin read streams, if they're valid.
+ * If the subject isn't specified in opts, it won't be present.
+ * If stdin doesn't have something being piped to it, it will be excluded.
+ * The first element of the list will be the one to use as subject. */
+const getSubjectAndStdinStreams = opts => {
   const streams = []
   if (opts.subject) streams.push(fs.createReadStream(opts.subject))
   if (!opts.stdin.isTTY) streams.push(opts.stdin)
-
-  positionals.forEach(pos => {
-    if (fs.statSync(pos).isDirectory()) {
-      streams.push(...getReadStreamsFromDir(pos))
-    } else streams.push(fs.createReadStream(pos))
-  })
-
   return streams
+}
+
+/* Get an array of paths to geojson files for the given filesystem path.
+ * If the given path is a file, one path will be returned.
+ * If the given path is a directory, zero or more paths will be returned. */
+const getFilePaths = async fsPath => {
+  const stat = await fs.statAsync(fsPath)
+  if (!stat.isDirectory()) return [fsPath]
+  const files = await fs.readdirAsync(fsPath)
+  return files
+    .filter(fn => path.extname(fn) === '.geojson')
+    .map(fn => path.join(fsPath, fn))
+}
+
+/* Get an array of the input streams, with the subject input stream
+ * at the front. */
+const getInputMultiPolys = async (positionals, opts) => {
+  // mpa: MultiPolygon array, fp: file path
+  const getMpa = stream => getMultiPolysFromStream(stream, opts.warn)
+  const getMpaFromFp = fp => getMpa(fs.createReadStream(fp))
+  const mpas = await Promise.all(getSubjectAndStdinStreams(opts).map(getMpa))
+
+  // if opts.bboxes is set, filter down files & mps based bboxes
+  const subject = mpas.length > 0 && mpas[0].length > 0 ? mpas[0][0] : null
+  if (opts.bboxes && !subject) return [] // no subject, so nothing can overlap
+  const subjectBbox = opts.bboxes ? bbox.getBboxFromMultiPoly(subject) : null
+
+  let fps = [].concat(...(await Promise.all(positionals.map(getFilePaths))))
+  if (subjectBbox) fps = bbox.filterDownFilenames(fps, subjectBbox)
+
+  mpas.push(...(await Promise.all(fps.map(getMpaFromFp))))
+  let mps = [].concat(...mpas)
+  if (subjectBbox) mps = bbox.filterDownMultiPolys(mps, subjectBbox)
+
+  return mps
 }
 
 /* Get an array of multipolygons from the given read stream.
@@ -45,11 +66,11 @@ const getMultiPolysFromStream = async (readStream, warn) =>
         if (chunk) mpStrs.push(chunk)
       })
       .on('end', () => {
-        mpStrs.forEach((mpStr, i) => {
+        for (let [i, mpStr] of mpStrs.entries()) {
           if (i !== 0) mpStr = '{' + mpStr
           if (i !== mpStrs.length - 1) mpStr = mpStr + '}'
           mpStrs[i] = mpStr
-        })
+        }
 
         let mps
         try {
@@ -61,9 +82,12 @@ const getMultiPolysFromStream = async (readStream, warn) =>
       })
   })
 
-/* Write the given multipoly out, as GeoJSON, to the given stream */
-const writeMultiPolyToStream = async (stream, multiPoly) =>
+/* Write the given multipoly out, as GeoJSON, to the output */
+const writeOutputMultiPoly = async (opts, multiPoly) =>
   new Promise((resolve, reject) => {
+    const stream = opts.output
+      ? fs.createWriteStream(opts.output, { mode: 0o644 })
+      : opts.stdout
     const geojson = {
       type: 'Feature',
       properties: null,
@@ -76,20 +100,16 @@ const writeMultiPolyToStream = async (stream, multiPoly) =>
   })
 
 async function doIt (operation, positionals, opts) {
-  const inputMps = await Promise.all(
-    getInputStreams(positionals, opts).map(getMultiPolysFromStream)
-  )
-  const inputMpsFlattened = [].concat(...inputMps)
-  const outputMp = polygonClipping[operation](...inputMpsFlattened)
-  const outputStream = getOutputStream(opts)
-  await writeMultiPolyToStream(outputStream, outputMp)
+  const inputMps = await getInputMultiPolys(positionals, opts)
+  const outputMp = polygonClipping[operation](...inputMps)
+  return writeOutputMultiPoly(opts, outputMp)
 }
 
 module.exports = {
-  getOutputStream,
-  getInputStreams,
-  getReadStreamsFromDir,
+  getFilePaths,
+  getSubjectAndStdinStreams,
+  getInputMultiPolys,
   getMultiPolysFromStream,
-  writeMultiPolyToStream,
+  writeOutputMultiPoly,
   doIt
 }

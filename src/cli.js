@@ -7,15 +7,27 @@ const lib = require('./lib')
 
 // Allow the test runner to request, via env vars, to mock out lib.doIt
 // Note that normal mocking doesn't work as this is run as a separate process.
-const shouldMockDoIt =
-  process.env['NODE_ENV'] === 'test' &&
-  process.env['NODE_MOCKS'].split(' ').includes('doIt')
-if (shouldMockDoIt) lib.doIt = () => {}
+if (process.env['NODE_ENV'] === 'test' && process.env['NODE_MOCK_DOIT']) {
+  lib.doIt = (operation, positionals, opts) => {
+    // these don't stringify well, change them
+    opts.stdin = opts.stdin.isTTY ? 'terminal' : 'piped'
+    opts.stdout = opts.stdout.isTTY ? 'terminal' : 'piped'
+    opts.warn = opts.warn === console.warn ? 'console' : 'none'
+    console.log(
+      JSON.stringify({
+        operation: operation,
+        positionals: positionals,
+        opts: opts
+      })
+    )
+  }
+}
 
 const handler = argv => {
   const command = argv._[0]
   const positionals = argv._.slice(1)
   const opts = {
+    bboxes: argv.bboxes,
     output: argv.output,
     subject: argv.subject,
     stdin: process.stdin,
@@ -59,20 +71,26 @@ yargs
     'difference',
     'Compute the difference',
     yargs =>
-      yargs.option('s', {
-        alias: 'subject',
-        describe: 'The subject GeoJSON object',
-        type: 'string',
-        requiresArg: true,
-        normalize: true
-      }),
+      yargs
+        .option('s', {
+          alias: 'subject',
+          describe: 'GeoJSON file containing subject',
+          type: 'string',
+          requiresArg: true,
+          normalize: true
+        })
+        .option('b', {
+          alias: 'bboxes',
+          describe: 'Respect any pre-computed bounding boxes found',
+          type: 'boolean'
+        }),
     handler
   )
   .command('xor', 'Compute the xor', {}, handler)
   .demandCommand(1, 'Please specify a command')
   .option('o', {
     alias: 'output',
-    describe: 'Write computed GeoJSON here',
+    describe: 'File to write resulting GeoJSON out to',
     type: 'string',
     requiresArg: true,
     normalize: true

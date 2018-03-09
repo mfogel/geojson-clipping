@@ -67,6 +67,17 @@ Use the file identified by `<path>` as input GeoJSON, and consider it to be the 
 
 If this option is not supplied, the `subject` will by default be the first GeoJSON object read in from `stdin`.
 
+### `-b / --bboxes`
+
+Valid *only* for `difference()` operation. Invalid for other operations.
+
+Scan input GeoJSON for pre-computed [bounding boxes](https://tools.ietf.org/html/rfc7946#section-5). Bounding boxes may be supplied via the GeoJSON `bbox` property, or may be present in the filename as stringified geojson. Examples of such filenames:
+
+* `[-10,-10,10,10].json`
+* `424242.[-58.5314588,-34.705637,-58.3351249,-34.5265535].geojson`
+
+When a bounding box is found, it is compared with the bounding box of the `subject` to determine if the bounding boxes overlap. In the case of no overlap, the calculation will be short-curcuited for a performance boost.
+
 ### `-o / --output <path>`
 
 Write the computed geojson object out to a newly-created file located at `<path>`.
@@ -105,6 +116,10 @@ $ geojson-clipping difference -s subject.geojson -o difference.geojson ./directo
 ```
 
 ## Changelog
+
+### 0.2 (in development)
+
+* add `-b / --bboxes` option for `difference()` operation
 
 ### 0.1
 
