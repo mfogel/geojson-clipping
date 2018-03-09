@@ -119,7 +119,8 @@ $ geojson-clipping difference -s subject.geojson -o difference.geojson ./directo
 
 ### 0.2 (in development)
 
-* add `-b / --bboxes` option for `difference()` operation
+* add `-b / --bboxes` option for `difference()` operation [#2](https://github.com/mfogel/geojson-clipping/issues/2)
+* create output directories as needed [#1](https://github.com/mfogel/geojson-clipping/issues/1)
 
 ### 0.1
 

@@ -1,4 +1,5 @@
 const path = require('path')
+const mkdirp = require('mkdirp')
 const polygonClipping = require('polygon-clipping')
 const split = require('split')
 const bbox = require('./bbox')
@@ -85,9 +86,11 @@ const getMultiPolysFromStream = async (readStream, warn) =>
 /* Write the given multipoly out, as GeoJSON, to the output */
 const writeOutputMultiPoly = async (opts, multiPoly) =>
   new Promise((resolve, reject) => {
-    const stream = opts.output
-      ? fs.createWriteStream(opts.output, { mode: 0o644 })
-      : opts.stdout
+    let stream = opts.stdout
+    if (opts.output) {
+      mkdirp(path.dirname(opts.output))
+      stream = fs.createWriteStream(opts.output)
+    }
     const geojson = {
       type: 'Feature',
       properties: null,

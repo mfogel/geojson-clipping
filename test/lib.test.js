@@ -400,10 +400,15 @@ describe('lib.getMultiPolysFromStream', () => {
   })
 })
 
-describe('lib.getOutputStream', () => {
+describe('lib.writeOutputMultiPoly', () => {
   const tmpOutput = path.join(tmpRoot, 'out.geojson')
+  const tmpNotPreExistingDir = path.join(tmpRoot, 'not-pre-existing')
+  const tmpNestedOutput = path.join(tmpNotPreExistingDir, 'out.geojson')
+  // *not* creating tmpNotPreExinstingDir
   beforeAll(() => setUpFs([], [tmpOutput]))
-  afterAll(() => tearDownFs([], [tmpOutput]))
+  afterAll(() =>
+    tearDownFs([tmpNotPreExistingDir], [tmpOutput, tmpNestedOutput])
+  )
 
   test('write to output file', async () => {
     const multipoly = []
@@ -415,6 +420,19 @@ describe('lib.getOutputStream', () => {
 
     await lib.writeOutputMultiPoly(opts, multipoly)
     const outString = await fs.readFileAsync(tmpOutput, 'utf8')
+    expect(outString).toEqual(JSON.stringify(expected))
+  })
+
+  test('write to output file in non-existent directory', async () => {
+    const multipoly = []
+    const expected = createFeatureMultiPoly(multipoly)
+    const opts = {
+      output: tmpNestedOutput,
+      stdout: process.stdout
+    }
+
+    await lib.writeOutputMultiPoly(opts, multipoly)
+    const outString = await fs.readFileAsync(tmpNestedOutput, 'utf8')
     expect(outString).toEqual(JSON.stringify(expected))
   })
 
