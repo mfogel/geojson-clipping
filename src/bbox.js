@@ -12,36 +12,60 @@ const getBboxFromFilename = fn => {
 
 /* Get a bounding box from a multipolygon */
 const getBboxFromMultiPoly = multipoly => {
-  const [NI, PI] = [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY]
-  const bbox = [PI, PI, NI, NI]
+  // calculate two possible bounding boxes: one that is cut on the
+  // antimeridian (traditional) and one cut on the primemerdian
+  // If they're different, take the smaller one
+
+  let south = Number.POSITIVE_INFINITY
+  let north = Number.NEGATIVE_INFINITY
+  let westAM = Number.POSITIVE_INFINITY
+  let eastAM = Number.NEGATIVE_INFINITY
+  let westPM = Number.POSITIVE_INFINITY
+  let eastPM = Number.NEGATIVE_INFINITY
+
+  // change a coordinate from 0 is prime merdian to 0 is anti merdian
+  // and vice-versa
+  const flipCoord = x => (x > 0 ? x - 180 : x + 180)
+
   for (const poly of multipoly) {
     for (const ring of poly) {
       for (const [x, y] of ring) {
-        bbox[0] = Math.min(bbox[0], x)
-        bbox[1] = Math.min(bbox[1], y)
-        bbox[2] = Math.max(bbox[2], x)
-        bbox[3] = Math.max(bbox[3], y)
+        south = Math.min(south, y)
+        north = Math.max(north, y)
+        westAM = Math.min(westAM, x)
+        eastAM = Math.max(eastAM, x)
+        westPM = Math.min(westPM, flipCoord(x))
+        eastPM = Math.max(eastPM, flipCoord(x))
       }
     }
   }
-  if (bbox[0] === PI) {
+
+  if (south === Number.POSITIVE_INFINITY) {
     throw new Error('Unable to compute bbox: no points in multipoly')
   }
-  return bbox
+
+  const extentAM = eastAM - westAM
+  const extentPM = eastPM - westPM
+
+  const bboxAM = [westAM, south, eastAM, north]
+  const bboxPM = [flipCoord(westPM), south, flipCoord(eastPM), north]
+
+  return extentPM < extentAM ? bboxPM : bboxAM
 }
 
 const doBboxesOverlap = (bbox1, bbox2) => {
-  let [x1min, y1min, x1max, y1max] = bbox1
-  let [x2min, y2min, x2max, y2max] = bbox2
+  let [w1, s1, e1, n1] = bbox1
+  let [w2, s2, e2, n2] = bbox2
 
-  /* account for antimeridian cutting
-   * https://tools.ietf.org/html/rfc7946#section-5.2 */
-  if (x1min > x1max) x1min -= 360
-  if (x2min > x2max) x2min -= 360
+  if (n2 < s1 || n1 < s2) return false
 
-  if (x2min > x1max || y2min > y1max) return false
-  if (x1min > x2max || y1min > y2max) return false
-  return true
+  // supporting antimerdian-crossing bboxes
+  const isBetween = (west, east, spot) => {
+    if (west <= east) return west <= spot && spot <= east
+    return (west <= spot && spot <= 180) || (spot >= -180 && spot <= east)
+  }
+
+  return isBetween(w1, e1, w2) || isBetween(w2, e2, w1)
 }
 
 /* Return an array of filenames that either:

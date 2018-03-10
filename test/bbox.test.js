@@ -49,6 +49,11 @@ describe('bbox.getBboxFromMultiPoly', () => {
     const mp = [[[[0, 0], [1, 1], [-1, -1], [-3, 4]]]]
     expect(bbox.getBboxFromMultiPoly(mp)).toEqual([-3, -1, 1, 4])
   })
+
+  test('cross the antimerdian', () => {
+    const mp = [[[[170, 0], [-170, 0], [-170, 1], [170, 1], [170, 0]]]]
+    expect(bbox.getBboxFromMultiPoly(mp)).toEqual([170, 0, -170, 1])
+  })
 })
 
 describe('bbox.bboxRegex', () => {
@@ -87,12 +92,27 @@ describe('bbox.doBboxesOverlap', () => {
     expect(bbox.doBboxesOverlap([0, 0, 10, 10], [-8, -8, 3, 3])).toBe(true)
   })
 
-  test('antimeridian', () => {
-    expect(bbox.doBboxesOverlap([175, 0, -175, 1], [2, 2, 3, 3])).toBe(false)
-    expect(bbox.doBboxesOverlap([2, 2, 3, 3], [175, 0, -175, 1])).toBe(false)
-    expect(bbox.doBboxesOverlap([175, 0, -175, 1], [-177, -1, -176, 3])).toBe(
-      true
-    )
+  describe('antimeridian', () => {
+    test('', () => {
+      const bbox1 = [175, 0, -175, 1]
+      const bbox2 = [2, 2, 3, 3]
+      expect(bbox.doBboxesOverlap(bbox1, bbox2)).toBe(false)
+      expect(bbox.doBboxesOverlap(bbox2, bbox1)).toBe(false)
+    })
+
+    test('', () => {
+      const bbox1 = [175, 0, -175, 1]
+      const bbox2 = [-177, -1, -176, 3]
+      expect(bbox.doBboxesOverlap(bbox1, bbox2)).toBe(true)
+      expect(bbox.doBboxesOverlap(bbox2, bbox1)).toBe(true)
+    })
+
+    test('', () => {
+      const bbox1 = [172, 51, -165, 57]
+      const bbox2 = [174, 44, 180, 56]
+      expect(bbox.doBboxesOverlap(bbox1, bbox2)).toBe(true)
+      expect(bbox.doBboxesOverlap(bbox2, bbox1)).toBe(true)
+    })
   })
 })
 
