@@ -46,7 +46,7 @@ The following [GeoJSON object types](https://tools.ietf.org/html/rfc7946#section
  * Feature containing Polygon or MultiPolygon
  * FeatureCollection containing an array of acceptable Features
 
-If a geojson object with a different type is encountered (ex: Point) the offending object will be dropped and a warning will be printed to `stderr`.
+If a GeoJSON object with a different type is encountered (ex: Point) the offending object will be dropped and a warning will be printed to `stderr`.
 
 ### Output
 
@@ -80,9 +80,15 @@ If a the bounding box of a given GeoJSON object does not overlap the bounding bo
 
 ### `-o / --output <path>`
 
-Write the computed geojson object out to a newly-created file located at `<path>`.
+Write the output GeoJSON object out to a newly-created file located at `<path>`.
 
-If this option is not supplied, the computed geojson will be written to `stdout`.
+If this option is not supplied, the ouput GeoJSON will be written to `stdout`.
+
+### `-i / --id <id>`
+
+Add to the output GeoJSON object the [Feature id](https://tools.ietf.org/html/rfc7946#section-3.2) `<id>`. If `<id>` can be parsed as a number it will be written into the output GeoJSON as a number, else it will be written out as a string.
+
+If this option is not supplied, the output GeoJSON will not have a Feature id.
 
 ### `-q / --quiet`
 
@@ -119,6 +125,7 @@ $ geojson-clipping difference -s subject.geojson -o difference.geojson ./directo
 
 ### 0.2 (in development)
 
+* add `-i / --id <id>` option [#3](https://github.com/mfogel/geojson-clipping/issues/3)
 * add `-b / --bboxes` option for `difference()` operation [#2](https://github.com/mfogel/geojson-clipping/issues/2)
 * create output directories as needed [#1](https://github.com/mfogel/geojson-clipping/issues/1)
 

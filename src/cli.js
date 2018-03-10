@@ -28,6 +28,7 @@ const handler = argv => {
   const positionals = argv._.slice(1)
   const opts = {
     bboxes: argv.bboxes,
+    id: argv.id,
     output: argv.output,
     subject: argv.subject,
     stdin: process.stdin,
@@ -94,6 +95,12 @@ yargs
     type: 'string',
     requiresArg: true,
     normalize: true
+  })
+  .option('i', {
+    alias: 'id',
+    describe: 'GeoJSON Feature id to add to output GeoJSON',
+    corece: arg => Number.parseFloat(arg),
+    requiresArg: true
   })
   .option('q', {
     alias: 'quiet',

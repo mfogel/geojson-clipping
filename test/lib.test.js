@@ -456,6 +456,52 @@ describe('lib.writeOutputMultiPoly', () => {
     await lib.writeOutputMultiPoly(opts, multipoly)
     expect(outString).toEqual(JSON.stringify(expected))
   })
+
+  test('write with a numeric id', async () => {
+    const multipoly = []
+    const id = 42.42
+    const expected = createFeatureMultiPoly(multipoly)
+    expected.id = id
+
+    let outString = ''
+    const outStream = new stream.Writable({
+      write: (chunk, encoding, callback) => {
+        outString += chunk
+        callback()
+      }
+    })
+
+    const opts = {
+      stdout: outStream,
+      id: id
+    }
+
+    await lib.writeOutputMultiPoly(opts, multipoly)
+    expect(outString).toEqual(JSON.stringify(expected))
+  })
+
+  test('write with a string id', async () => {
+    const multipoly = []
+    const id = '44ff'
+    const expected = createFeatureMultiPoly(multipoly)
+    expected.id = id
+
+    let outString = ''
+    const outStream = new stream.Writable({
+      write: (chunk, encoding, callback) => {
+        outString += chunk
+        callback()
+      }
+    })
+
+    const opts = {
+      stdout: outStream,
+      id: id
+    }
+
+    await lib.writeOutputMultiPoly(opts, multipoly)
+    expect(outString).toEqual(JSON.stringify(expected))
+  })
 })
 
 describe('lib.doIt', () => {

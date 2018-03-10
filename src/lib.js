@@ -99,6 +99,7 @@ const writeOutputMultiPoly = async (opts, multiPoly) =>
         coordinates: multiPoly
       }
     }
+    if (opts.id) geojson.id = opts.id
     stream.write(JSON.stringify(geojson), 'utf-8', resolve)
   })
 

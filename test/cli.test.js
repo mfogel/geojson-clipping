@@ -103,6 +103,24 @@ describe('cli', () => {
     expect(JSON.parse(result.stdout).opts.output).toEqual('file')
   })
 
+  test('OK with string -i option', async () => {
+    const result = await spawn(cliPath, ['union', '-i', 'id'], optsWithStdin)
+    expect(result.stderr).toEqual('')
+    expect(JSON.parse(result.stdout).opts.id).toEqual('id')
+  })
+
+  test('OK with numeric -i option', async () => {
+    const result = await spawn(cliPath, ['union', '-i', 42.42], optsWithStdin)
+    expect(result.stderr).toEqual('')
+    expect(JSON.parse(result.stdout).opts.id).toEqual(42.42)
+  })
+
+  test('OK with numeric-like-actually-string -i option', async () => {
+    const result = await spawn(cliPath, ['union', '-i', '42ff'], optsWithStdin)
+    expect(result.stderr).toEqual('')
+    expect(JSON.parse(result.stdout).opts.id).toEqual('42ff')
+  })
+
   test('help shown if difference() does not receive -s or input on stdin', () => {
     expect.assertions(2)
     return spawn(
