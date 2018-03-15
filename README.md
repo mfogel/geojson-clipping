@@ -125,6 +125,7 @@ $ geojson-clipping difference -s subject.geojson -o difference.geojson ./directo
 
 ### 0.3 (in development)
 
+* Performance improvements
 * enhance `-b / --bboxes` to better support bounding boxes that cross the antimeridian [#4](https://github.com/mfogel/geojson-clipping/issues/4)
 
 ### 0.2 (2018-03-09)

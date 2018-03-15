@@ -23,19 +23,30 @@ const getBboxFromMultiPoly = multipoly => {
   let westPM = Number.POSITIVE_INFINITY
   let eastPM = Number.NEGATIVE_INFINITY
 
-  // change a coordinate from 0 is prime merdian to 0 is anti merdian
-  // and vice-versa
+  // normally 0 is the prime merdian and 180 the anti
+  // this flips a coordinate so 0 is the anit 180 the prime
   const flipCoord = x => (x > 0 ? x - 180 : x + 180)
 
-  for (const poly of multipoly) {
-    for (const ring of poly) {
-      for (const [x, y] of ring) {
-        south = Math.min(south, y)
-        north = Math.max(north, y)
-        westAM = Math.min(westAM, x)
-        eastAM = Math.max(eastAM, x)
-        westPM = Math.min(westPM, flipCoord(x))
-        eastPM = Math.max(eastPM, flipCoord(x))
+  // performance-optimized looping over coordinates
+  for (let i = 0, iMax = multipoly.length; i < iMax; i++) {
+    const poly = multipoly[i]
+
+    for (let j = 0, jMax = poly.length; j < jMax; j++) {
+      const ring = poly[j]
+
+      for (let k = 0, kMax = ring.length; k < kMax; k++) {
+        const x = ring[k][0]
+        const y = ring[k][1]
+        const xPM = flipCoord(x)
+
+        if (y < south) south = y
+        if (y > north) north = y
+
+        if (x < westAM) westAM = x
+        if (x > eastAM) eastAM = x
+
+        if (xPM < westPM) westPM = xPM
+        if (xPM > eastPM) eastPM = xPM
       }
     }
   }
