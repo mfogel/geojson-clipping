@@ -121,6 +121,12 @@ describe('cli', () => {
     expect(JSON.parse(result.stdout).opts.id).toEqual('42ff')
   })
 
+  test('OK with -p option', async () => {
+    const result = await spawn(cliPath, ['union', '-p', 100], optsWithStdin)
+    expect(result.stderr).toEqual('')
+    expect(JSON.parse(result.stdout).opts.points).toEqual(100)
+  })
+
   test('help shown if difference() does not receive -s or input on stdin', () => {
     expect.assertions(2)
     return spawn(

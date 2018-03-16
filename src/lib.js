@@ -8,6 +8,10 @@ const parse = require('./parse')
 const Promise = require('bluebird')
 const fs = Promise.promisifyAll(require('fs'))
 
+/* Counter of number of points read in from input streams.
+ * Used with option -p / --points to limit memory usage */
+let POINT_CNT = 0
+
 /* Get an array of the subject and stdin read streams, if they're valid.
  * If the subject isn't specified in opts, it won't be present.
  * If stdin doesn't have something being piped to it, it will be excluded.
@@ -31,27 +35,19 @@ const getFilePaths = async fsPath => {
     .map(fn => path.join(fsPath, fn))
 }
 
-/* Get an array of the input streams, with the subject input stream
- * at the front. */
-const getInputMultiPolys = async (positionals, opts) => {
-  // mpa: MultiPolygon array, fp: file path
-  const getMpa = stream => getMultiPolysFromStream(stream, opts.warn)
-  const getMpaFromFp = fp => getMpa(fs.createReadStream(fp))
-  const mpas = await Promise.all(getSubjectAndStdinStreams(opts).map(getMpa))
-
-  // if opts.bboxes is set, filter down files & mps based bboxes
-  const subject = mpas.length > 0 && mpas[0].length > 0 ? mpas[0][0] : null
-  if (opts.bboxes && !subject) return [] // no subject, so nothing can overlap
-  const subjectBbox = opts.bboxes ? bbox.getBboxFromMultiPoly(subject) : null
-
-  let fps = [].concat(...(await Promise.all(positionals.map(getFilePaths))))
-  if (subjectBbox) fps = bbox.filterDownFilenames(fps, subjectBbox)
-
-  mpas.push(...(await Promise.all(fps.map(getMpaFromFp))))
-  let mps = [].concat(...mpas)
-  if (subjectBbox) mps = bbox.filterDownMultiPolys(mps, subjectBbox)
-
-  return mps
+/* Get the number of points in an array of multipolys */
+const countPoints = mps => {
+  let cnt = 0
+  for (let i = 0, iMax = mps.length; i < iMax; i++) {
+    const mp = mps[i]
+    for (let j = 0, jMax = mp.length; j < jMax; j++) {
+      const poly = mp[j]
+      for (let k = 0, kMax = poly.length; k < kMax; k++) {
+        cnt += poly[k].length
+      }
+    }
+  }
+  return cnt
 }
 
 /* Get an array of multipolygons from the given read stream.
@@ -79,6 +75,7 @@ const getMultiPolysFromStream = async (readStream, warn) =>
         } catch (err) {
           return reject(err)
         }
+        POINT_CNT += countPoints(mps)
         return resolve(mps)
       })
   })
@@ -104,15 +101,55 @@ const writeOutputMultiPoly = async (opts, multiPoly) =>
   })
 
 async function doIt (operation, positionals, opts) {
-  const inputMps = await getInputMultiPolys(positionals, opts)
-  const outputMp = polygonClipping[operation](...inputMps)
-  return writeOutputMultiPoly(opts, outputMp)
+  const streams = getSubjectAndStdinStreams(opts)
+  let fps = [].concat(...(await Promise.all(positionals.map(getFilePaths))))
+
+  let subject = null
+  let subjectBbox = null
+  let mps = []
+
+  // attempt to get the subject, if specified (defaulting to stdin if not)
+  if (streams.length > 0) {
+    mps = await getMultiPolysFromStream(streams.shift(), opts.warn)
+    subject = mps.shift()
+  }
+
+  // trim the positional arguments for the -b / --bboxes option, if requested
+  if (opts.bboxes) {
+    if (!subject) return [] // no subject, so nothing can overlap
+    subjectBbox = bbox.getBboxFromMultiPoly(subject)
+    fps = bbox.filterDownFilenames(fps, subjectBbox)
+  }
+
+  // convert positional arguments to input streams
+  streams.push(...fps.map(fp => fs.createReadStream(fp)))
+
+  // initialize our 'result' as either subject or first mp from positionals
+  let result = null
+  if (subject) result = subject
+  else {
+    mps = await getMultiPolysFromStream(streams.shift(), opts.warn)
+    result = mps.shift()
+  }
+
+  while (mps.length > 0 || streams.length > 0) {
+    // read in input mps, until we hit opts.points or run out of inputs
+    while (streams.length && POINT_CNT < opts.points) {
+      mps.push(...(await getMultiPolysFromStream(streams.shift(), opts.warn)))
+    }
+    // filter those down by bbox if requested
+    if (subjectBbox) mps = bbox.filterDownMultiPolys(mps, subjectBbox)
+    // do the operation
+    result = polygonClipping[operation](result, ...mps)
+    mps = []
+  }
+
+  return writeOutputMultiPoly(opts, result)
 }
 
 module.exports = {
   getFilePaths,
   getSubjectAndStdinStreams,
-  getInputMultiPolys,
   getMultiPolysFromStream,
   writeOutputMultiPoly,
   doIt

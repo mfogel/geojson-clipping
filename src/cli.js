@@ -30,6 +30,7 @@ const handler = argv => {
     bboxes: argv.bboxes,
     id: argv.id,
     output: argv.output,
+    points: argv.points,
     subject: argv.subject,
     stdin: process.stdin,
     stdout: process.stdout,
@@ -100,6 +101,12 @@ yargs
     alias: 'id',
     describe: 'GeoJSON Feature id to add to output GeoJSON',
     corece: arg => Number.parseFloat(arg),
+    requiresArg: true
+  })
+  .option('p', {
+    alias: 'points',
+    describe: 'Goal number of points to process at a time',
+    type: 'number',
     requiresArg: true
   })
   .option('q', {

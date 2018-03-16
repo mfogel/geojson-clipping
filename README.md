@@ -76,7 +76,13 @@ Scan input GeoJSON filenames for pre-computed stringified [bounding boxes](https
 * `[-10,-10,10,10].json`
 * `424242.[-58.5314588,-34.705637,-58.3351249,-34.5265535].geojson`
 
-If a the bounding box of a given GeoJSON object does not overlap the bounding box of the `subject`, that GeoJSON object is droped from the calculation as it cannot contribute to the end result, resulting in a performance boost. In the case that the bounding box was extracted from the filename, the non-contributing GeoJSON object is dropped *without* reading the file in from disk.
+If a the bounding box of a given GeoJSON object does not overlap the bounding box of the `subject`, that GeoJSON object is dropped from the calculation as it cannot contribute to the end result, resulting in a performance boost. In the case that the bounding box was extracted from the filename, the non-contributing GeoJSON object is dropped *without* reading the file in from disk.
+
+### `-p / --points <integer>`
+
+Approximate maximum number of points to process in memory simultaneously. Set to a lower value to avoid out-of-memory errors, raise to process inputs faster.
+
+If this option is not supplied, it will default to an amount intended to keep the process's memory usage comfortably below [node's default maximum heap size limit on a 64-bit machine](https://github.com/nodejs/node/issues/7937#issuecomment-269997873).
 
 ### `-o / --output <path>`
 

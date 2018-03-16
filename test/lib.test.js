@@ -12,10 +12,7 @@ const fs = Promise.promisifyAll(require('fs'))
 jest.mock('../src/parse')
 const parse = require('../src/parse')
 
-jest.mock('polygon-clipping')
-const polygonClipping = require('polygon-clipping')
-
-afterEach(() => jest.clearAllMocks())
+beforeEach(() => parse.mockImplementation(() => []))
 
 const tmpRoot = 'test/tmp-delete-me'
 beforeAll(() => fs.mkdirAsync(tmpRoot))
@@ -111,113 +108,6 @@ describe('lib.getFilePaths', () => {
   test('direcdtory scaned and ignores non-geojson', async () => {
     const paths = await lib.getFilePaths(tmpDir)
     expect(paths).toEqual([tmpFile1, tmpFile2])
-  })
-})
-
-describe('lib.getInputMultiPolys', () => {
-  const tmpDir = path.join(tmpRoot, 'dir')
-  const tmpSubject = path.join(tmpRoot, 'subject.geojson')
-  const tmpFile = path.join(tmpRoot, 'file.geojson')
-  const tmpInDir1 = path.join(tmpDir, 'file1.[0,0,1,1].geojson')
-  const tmpInDir2 = path.join(tmpDir, 'file2.geojson')
-  const tmpNotGeojson = path.join(tmpDir, 'file.notgeojson')
-  const files = [tmpSubject, tmpFile, tmpInDir1, tmpInDir2, tmpNotGeojson]
-  beforeAll(() => setUpFs([tmpDir], files))
-  afterAll(() => tearDownFs([tmpDir], files))
-
-  test('no inputs', async () => {
-    const positionals = []
-    const opts = { stdin: process.stdin }
-    const mps = await lib.getInputMultiPolys(positionals, opts)
-    expect(mps).toEqual([])
-  })
-
-  test('stdin, subject, positional file & dir inputs', async () => {
-    parse.mockImplementation(input => input)
-    const stdinGeojson = { id: 1 }
-    const subGeojson = { id: 2 }
-    const inDir1Geojson = { id: 3 }
-    const inDir2Geojson = { id: 4 }
-    const fileGeojson = { id: 5 }
-    const notGeojson = 'not geojson'
-
-    await fs.writeFileAsync(tmpSubject, JSON.stringify(subGeojson))
-    await fs.writeFileAsync(tmpInDir1, JSON.stringify(inDir1Geojson))
-    await fs.writeFileAsync(tmpInDir2, JSON.stringify(inDir2Geojson))
-    await fs.writeFileAsync(tmpNotGeojson, notGeojson)
-    await fs.writeFileAsync(tmpFile, JSON.stringify(fileGeojson))
-
-    const positionals = [tmpFile, tmpDir]
-    const opts = {
-      stdin: new stream.Readable(),
-      subject: tmpSubject
-    }
-
-    opts.stdin.push(JSON.stringify(stdinGeojson))
-    opts.stdin.push(null)
-
-    const mps = await lib.getInputMultiPolys(positionals, opts)
-    expect(mps).toEqual([
-      subGeojson,
-      stdinGeojson,
-      fileGeojson,
-      inDir1Geojson,
-      inDir2Geojson
-    ])
-  })
-
-  test('bbox filter no subject', async () => {
-    const opts = {
-      stdin: new stream.Readable(),
-      bboxes: true
-    }
-    opts.stdin.push(null)
-
-    const mps = await lib.getInputMultiPolys([], opts)
-    expect(mps).toEqual([])
-  })
-
-  test('bbox subject from stdin filter removes some files', async () => {
-    parse.mockImplementation(input => input)
-    const stdinGeojson = [[[[2, 2], [3, 2], [2, 3], [2, 2]]]]
-    const inDir1Geojson = [[[[0, 0], [1, 0], [0, 1], [0, 0]]]]
-    const inDir2Geojson = [[[[2, 2], [3, 2], [2, 3], [2, 2]]]]
-
-    await fs.writeFileAsync(tmpInDir1, JSON.stringify(inDir1Geojson))
-    await fs.writeFileAsync(tmpInDir2, JSON.stringify(inDir2Geojson))
-
-    const positionals = [tmpDir]
-    const opts = {
-      stdin: new stream.Readable(),
-      bboxes: true
-    }
-
-    opts.stdin.push(JSON.stringify(stdinGeojson))
-    opts.stdin.push(null)
-
-    const mps = await lib.getInputMultiPolys(positionals, opts)
-    expect(mps).toEqual([stdinGeojson, inDir2Geojson])
-  })
-
-  test('bbox subject from file filter removes some multipolys', async () => {
-    parse.mockImplementation(input => input)
-    const subjectGeojson = [[[[4, 4], [5, 4], [4, 5], [4, 4]]]]
-    const inDir1Geojson = [[[[0, 0], [1, 0], [0, 1], [0, 0]]]]
-    const inDir2Geojson = [[[[2, 2], [3, 2], [2, 3], [2, 2]]]]
-
-    await fs.writeFileAsync(tmpSubject, JSON.stringify(subjectGeojson))
-    await fs.writeFileAsync(tmpInDir1, JSON.stringify(inDir1Geojson))
-    await fs.writeFileAsync(tmpInDir2, JSON.stringify(inDir2Geojson))
-
-    const positionals = [tmpDir]
-    const opts = {
-      stdin: process.stdin,
-      subject: tmpSubject,
-      bboxes: true
-    }
-
-    const mps = await lib.getInputMultiPolys(positionals, opts)
-    expect(mps).toEqual([subjectGeojson])
   })
 })
 
@@ -501,32 +391,5 @@ describe('lib.writeOutputMultiPoly', () => {
 
     await lib.writeOutputMultiPoly(opts, multipoly)
     expect(outString).toEqual(JSON.stringify(expected))
-  })
-})
-
-describe('lib.doIt', () => {
-  test('basic interface with polygonClipping', async () => {
-    parse.mockImplementation(input => input)
-    polygonClipping.union.mockImplementation(() => [])
-
-    let outString = ''
-    const opts = {
-      stdin: new stream.Readable(),
-      stdout: new stream.Writable({
-        write: (chunk, encoding, callback) => {
-          outString += chunk
-          callback()
-        }
-      })
-    }
-    const stdinGeojson = { id: 1 }
-    opts.stdin.push(JSON.stringify(stdinGeojson))
-    opts.stdin.push(null)
-    const expected = createFeatureMultiPoly([])
-
-    await lib.doIt('union', [], opts)
-    expect(polygonClipping.union).toHaveBeenCalledTimes(1)
-    expect(polygonClipping.union).toHaveBeenCalledWith(stdinGeojson)
-    expect(JSON.parse(outString)).toEqual(expected)
   })
 })
