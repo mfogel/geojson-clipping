@@ -1,12 +1,17 @@
 /* Given an 'acceptable' geojson input object, parse out and return a
- * multipoly. If the object is not 'acceptable', throw an error.
+ * multipoly.
+ *
+ * If the object is un-parseable, throw an error.
+ *
+ * If the object is an 'unacceptable' GeoJSON object, emit a
+ * warning with the `warn` callback drop the object.  The definition
+ * of an 'acceptable' input geojon object can be found in the
+ * README, in the section 'Input'.
  *
  * If given a feature collection with multiple feature of polys & multipolys,
  * they will be joined together to form one big (possibly overlapping)
  * multipoly.
- *
- * The definition of an 'acceptable' input geojon object can be found in the
- * README, in the section 'Input' */
+ */
 
 // https://tools.ietf.org/html/rfc7946#section-3
 const unacceptableGeojsonTypes = [
