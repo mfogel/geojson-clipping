@@ -12,12 +12,9 @@ const fs = Promise.promisifyAll(require('fs'))
 jest.mock('../src/parse')
 const parse = require('../src/parse')
 
-jest.mock('polygon-clipping')
-const polygonClipping = require('polygon-clipping')
+beforeEach(() => parse.mockImplementation(() => []))
 
-afterEach(() => jest.clearAllMocks())
-
-const tmpRoot = 'test/tmp-delete-me'
+const tmpRoot = 'test/tmp-lib-delete-me'
 beforeAll(() => fs.mkdirAsync(tmpRoot))
 afterAll(() => Promise.promisify(rimraf)(tmpRoot))
 
@@ -175,6 +172,19 @@ describe('lib.getInputMultiPolys', () => {
 
     const mps = await lib.getInputMultiPolys([], opts)
     expect(mps).toEqual([])
+  })
+
+  test('bbox filter empty subject', async () => {
+    const opts = {
+      stdin: new stream.Readable(),
+      bboxes: true
+    }
+    const input = createFeatureMultiPoly([])
+    opts.stdin.push(JSON.stringify(input))
+    opts.stdin.push(null)
+
+    const mps = await lib.getInputMultiPolys([], opts)
+    expect(mps).toEqual([[]])
   })
 
   test('bbox subject from stdin filter removes some files', async () => {
@@ -501,32 +511,5 @@ describe('lib.writeOutputMultiPoly', () => {
 
     await lib.writeOutputMultiPoly(opts, multipoly)
     expect(outString).toEqual(JSON.stringify(expected))
-  })
-})
-
-describe('lib.doIt', () => {
-  test('basic interface with polygonClipping', async () => {
-    parse.mockImplementation(input => input)
-    polygonClipping.union.mockImplementation(() => [])
-
-    let outString = ''
-    const opts = {
-      stdin: new stream.Readable(),
-      stdout: new stream.Writable({
-        write: (chunk, encoding, callback) => {
-          outString += chunk
-          callback()
-        }
-      })
-    }
-    const stdinGeojson = { id: 1 }
-    opts.stdin.push(JSON.stringify(stdinGeojson))
-    opts.stdin.push(null)
-    const expected = createFeatureMultiPoly([])
-
-    await lib.doIt('union', [], opts)
-    expect(polygonClipping.union).toHaveBeenCalledTimes(1)
-    expect(polygonClipping.union).toHaveBeenCalledWith(stdinGeojson)
-    expect(JSON.parse(outString)).toEqual(expected)
   })
 })

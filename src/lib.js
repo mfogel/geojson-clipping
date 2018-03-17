@@ -41,8 +41,11 @@ const getInputMultiPolys = async (positionals, opts) => {
 
   // if opts.bboxes is set, filter down files & mps based bboxes
   const subject = mpas.length > 0 && mpas[0].length > 0 ? mpas[0][0] : null
-  if (opts.bboxes && !subject) return [] // no subject, so nothing can overlap
-  const subjectBbox = opts.bboxes ? bbox.getBboxFromMultiPoly(subject) : null
+  // no subject, so nothing can overlap
+  const subjectBbox =
+    opts.bboxes && subject && subject.length > 0
+      ? bbox.getBboxFromMultiPoly(subject)
+      : null
 
   let fps = [].concat(...(await Promise.all(positionals.map(getFilePaths))))
   if (subjectBbox) fps = bbox.filterDownFilenames(fps, subjectBbox)
