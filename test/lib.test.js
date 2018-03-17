@@ -14,7 +14,7 @@ const parse = require('../src/parse')
 
 beforeEach(() => parse.mockImplementation(() => []))
 
-const tmpRoot = 'test/tmp-delete-me'
+const tmpRoot = 'test/tmp-lib-delete-me'
 beforeAll(() => fs.mkdirAsync(tmpRoot))
 afterAll(() => Promise.promisify(rimraf)(tmpRoot))
 
@@ -108,6 +108,17 @@ describe('lib.getFilePaths', () => {
   test('direcdtory scaned and ignores non-geojson', async () => {
     const paths = await lib.getFilePaths(tmpDir)
     expect(paths).toEqual([tmpFile1, tmpFile2])
+  })
+})
+
+describe('lib.countPoints', () => {
+  test('empty array', () => {
+    expect(lib.countPoints([])).toBe(0)
+  })
+
+  test('basic', () => {
+    const mps = [[[[[0, 0], [1, 0], [0, 1], [0, 0]]]]]
+    expect(lib.countPoints(mps)).toBe(4)
   })
 })
 

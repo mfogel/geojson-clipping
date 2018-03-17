@@ -75,7 +75,7 @@ const getMultiPolysFromStream = async (readStream, warn) =>
         } catch (err) {
           return reject(err)
         }
-        POINT_CNT += countPoints(mps)
+        mps.forEach(mp => (POINT_CNT += countPoints(mp)))
         return resolve(mps)
       })
   })
@@ -115,8 +115,7 @@ async function doIt (operation, positionals, opts) {
   }
 
   // trim the positional arguments for the -b / --bboxes option, if requested
-  if (opts.bboxes) {
-    if (!subject) return [] // no subject, so nothing can overlap
+  if (opts.bboxes && subject.length > 0) {
     subjectBbox = bbox.getBboxFromMultiPoly(subject)
     fps = bbox.filterDownFilenames(fps, subjectBbox)
   }
@@ -133,8 +132,12 @@ async function doIt (operation, positionals, opts) {
   }
 
   while (mps.length > 0 || streams.length > 0) {
-    // read in input mps, until we hit opts.points or run out of inputs
-    while (streams.length && POINT_CNT < opts.points) {
+    POINT_CNT = countPoints(result)
+    // read in at least one input mp,
+    // continue until we hit opts.points or run out of inputs
+    let first = true
+    while (streams.length && (first || POINT_CNT < opts.points)) {
+      first = false
       mps.push(...(await getMultiPolysFromStream(streams.shift(), opts.warn)))
     }
     // filter those down by bbox if requested
@@ -148,6 +151,7 @@ async function doIt (operation, positionals, opts) {
 }
 
 module.exports = {
+  countPoints,
   getFilePaths,
   getSubjectAndStdinStreams,
   getMultiPolysFromStream,

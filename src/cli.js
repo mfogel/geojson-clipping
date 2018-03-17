@@ -106,6 +106,7 @@ yargs
   .option('p', {
     alias: 'points',
     describe: 'Goal number of points to process at a time',
+    default: 1000,
     type: 'number',
     requiresArg: true
   })
