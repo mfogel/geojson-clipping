@@ -75,7 +75,7 @@ const getMultiPolysFromStream = async (readStream, warn) =>
 
         let mps
         try {
-          mps = mpStrs.map(mpStr => parse(JSON.parse(mpStr)))
+          mps = mpStrs.map(mpStr => parse(JSON.parse(mpStr), warn))
         } catch (err) {
           return reject(err)
         }

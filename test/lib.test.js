@@ -280,7 +280,7 @@ describe('lib.getMultiPolysFromStream', () => {
 
     await lib.getMultiPolysFromStream(readStream, warn)
     expect(parse).toHaveBeenCalledTimes(1)
-    expect(parse).toHaveBeenCalledWith(obj)
+    expect(parse).toHaveBeenCalledWith(obj, warn)
   })
 
   test('complicated json object sent to parser correctly', async () => {
@@ -302,7 +302,7 @@ describe('lib.getMultiPolysFromStream', () => {
 
     await lib.getMultiPolysFromStream(readStream, warn)
     expect(parse).toHaveBeenCalledTimes(1)
-    expect(parse).toHaveBeenCalledWith(obj)
+    expect(parse).toHaveBeenCalledWith(obj, warn)
   })
 
   test('json object with trailing and leading whitespace', async () => {
@@ -315,7 +315,7 @@ describe('lib.getMultiPolysFromStream', () => {
 
     await lib.getMultiPolysFromStream(readStream, warn)
     expect(parse).toHaveBeenCalledTimes(1)
-    expect(parse).toHaveBeenCalledWith(obj)
+    expect(parse).toHaveBeenCalledWith(obj, warn)
   })
 
   test('json object with leading crud', () => {
@@ -350,8 +350,8 @@ describe('lib.getMultiPolysFromStream', () => {
 
     await lib.getMultiPolysFromStream(readStream, warn)
     expect(parse).toHaveBeenCalledTimes(2)
-    expect(parse).toHaveBeenCalledWith(obj1)
-    expect(parse).toHaveBeenCalledWith(obj2)
+    expect(parse).toHaveBeenCalledWith(obj1, warn)
+    expect(parse).toHaveBeenCalledWith(obj2, warn)
   })
 
   test('two json objects whitespace separation', async () => {
@@ -365,8 +365,8 @@ describe('lib.getMultiPolysFromStream', () => {
 
     await lib.getMultiPolysFromStream(readStream, warn)
     expect(parse).toHaveBeenCalledTimes(2)
-    expect(parse).toHaveBeenCalledWith(obj1)
-    expect(parse).toHaveBeenCalledWith(obj2)
+    expect(parse).toHaveBeenCalledWith(obj1, warn)
+    expect(parse).toHaveBeenCalledWith(obj2, warn)
   })
 
   test('two json objects non-whitespace separation rejects', () => {
@@ -394,9 +394,9 @@ describe('lib.getMultiPolysFromStream', () => {
 
     await lib.getMultiPolysFromStream(readStream, warn)
     expect(parse).toHaveBeenCalledTimes(3)
-    expect(parse).toHaveBeenCalledWith(obj1)
-    expect(parse).toHaveBeenCalledWith(obj2)
-    expect(parse).toHaveBeenCalledWith(obj3)
+    expect(parse).toHaveBeenCalledWith(obj1, warn)
+    expect(parse).toHaveBeenCalledWith(obj2, warn)
+    expect(parse).toHaveBeenCalledWith(obj3, warn)
   })
 })
 
