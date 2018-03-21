@@ -3,7 +3,7 @@
 Apply boolean polygon clipping operations (`union`, `intersection`, `difference`, `xor`) to Polygons & MultiPolygons in your GeoJSON files.
 
 [![npm version](https://img.shields.io/npm/v/geojson-clipping.svg)](https://www.npmjs.com/package/geojson-clipping)
-[![build status](https://img.shields.io/travis/mfogel/geojson-clipping.svg)](https://travis-ci.org/mfogel/geojson-clipping)
+[![build status](https://img.shields.io/travis/mfogel/geojson-clipping/master.svg)](https://travis-ci.org/mfogel/geojson-clipping)
 [![test coverage](https://img.shields.io/coveralls/mfogel/geojson-clipping/master.svg)](https://coveralls.io/r/mfogel/geojson-clipping)
 
 ## Quickstart
