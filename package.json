@@ -1,6 +1,6 @@
 {
   "name": "geojson-clipping",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Apply boolean polygon clipping operations (union, intersection, difference, xor) to Polygons & MultiPolygons in your GeoJSON files.",
   "bin": "src/cli.js",
   "scripts": {
